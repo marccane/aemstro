@@ -493,9 +493,12 @@ for i in range(0x8):
 for i in range(0x8):
 	instList[0x38+i]={"name" : "MAD", "format" : 8}
 
-def parseCode(data, e, lt, vt, ut, ot):
+def parseCode(data, e, lt, vt, ut, ot, mainStart, mainEnd):
 	l=len(data)
-	for k in range(0,l,4):
+	assert mainStart % 4 == 0
+	assert mainEnd % 4 == 0
+	assert mainStart <= mainEnd
+	for k in range(mainStart, mainEnd, 4):
 		v=getWord(data,k)
 		opcode=v>>26
 
@@ -538,7 +541,7 @@ def parseCode(data, e, lt, vt, ut, ot):
 
 		k+=0x4
 
-def parseDVLP(data, lt, vt, ut, ot, k):
+def parseDVLP(data, lt, vt, ut, ot, k, mainStart, mainEnd):
 	l=len(data)
 	extOffset=getWord(data, 0x10)
 	fnOffset=getWord(data, 0x18)
@@ -552,7 +555,7 @@ def parseDVLP(data, lt, vt, ut, ot, k):
 	ext=parseExtTable(data[extOffset:(extOffset+extSize)])
 	codeOffset=getWord(data, 0x8)
 	codeSize=getWord(data, 0xC)*4
-	parseCode(data[codeOffset:(codeOffset+codeSize)], ext, lt, vt, ut, ot)
+	parseCode(data[codeOffset:(codeOffset+codeSize)], ext, lt, vt, ut, ot, mainStart, mainEnd)
 
 def parseLabelTable(data, sym):
 	l=len(data)
@@ -712,7 +715,7 @@ def parseDVLE(data,dvlp, k):
 	unifTable=parseConstTable(data[unifOffset:(unifOffset+unifSize)],sym)
 	outputTable=parseOutputTable(data[outputOffset:(outputOffset+outputSize)],sym)
 
-	parseDVLP(dvlp, labelTable, varTable, unifTable, outputTable, k)
+	parseDVLP(dvlp, labelTable, varTable, unifTable, outputTable, k, mainStart, mainEnd)
 	print("")
 
 	return (labelTable,varTable,unifTable,range(codeStartOffset,codeEndOffset))
